@@ -1,0 +1,261 @@
+CREATE TABLE customer (
+	customer_id varchar PRIMARY KEY,
+	customer_name varchar,
+	segment varchar,
+	age int,
+	country varchar,
+	city varchar,
+	state varchar,
+	postal_code bigint,
+	region varchar);
+	
+CREATE TABLE product (
+	product_id varchar PRIMARY KEY,
+	category varchar,
+	sub_category varchar,
+	product_name varchar);
+	
+CREATE TABLE sales (
+	order_line int PRIMARY KEY,
+	order_id varchar,
+	order_date date,
+	ship_date date,
+	ship_mode varchar,
+	customer_id varchar,
+	product_id varchar, 
+	sales numeric,
+	quantity int,
+	discount numeric,
+	profit numeric);
+
+COPY customer FROM 'C:\Program Files\PostgreSQL\13\data\data_ben\Customer.csv' CSV HEADER;
+COPY product FROM 'C:\Program Files\PostgreSQL\13\data\data_ben\Product.csv' CSV HEADER;
+COPY sales FROM 'C:\Program Files\PostgreSQL\13\data\data_ben\Sales.csv' CSV HEADER;
+
+SELECT * FROM product;
+
+-------------- IN CONDITION FOR MULTIPLE CONDITIONS ----------------- 
+SELECT * FROM customer WHERE city IN ('Philadelphia','Seattle');
+SELECT * FROM customer WHERE city='Philadelphia' OR city='Seattle';
+-------------- BETWEEN CONDITION  ----------------------------------- 
+SELECT * FROM customer WHERE age BETWEEN 20 AND 30;
+SELECT * FROM customer WHERE age >=20 AND <= 30;
+SELECT * FROM customer WHERE age NOT BETWEEN 20 and 30;
+SELECT * FROM sales WHERE ship_date BETWEEN '2015-04-01' AND '2016-04-01';
+-------------- LIKE CONDITION  ----------------------------------- 
+-- used for pattern matching and as a wildcard
+-- wildecard is % match any length including zero length
+-- the underscore _ allows you to match on a single character
+-- A% means starts with A
+-- %A means ends with A
+-- A%B means starts with A and ends with B
+-- AB_C means string starts with AB, there is 1 character, and then C
+-- space and zero and considered as character
+SELECT * FROM customer WHERE customer_name LIKE 'J%'; -- only capital J
+SELECT * FROM customer WHERE customer_name LIKE '%Nelson%';
+SELECT * FROM customer WHERE customer_name LIKE '____ %'; --first name 4 characters
+SELECT DISTINCT city FROM customer WHERE city NOT LIKE 'S%';
+--escape character want the %
+SELECT * FROM customer WHERE customer_name LIKE 'G\%';
+
+------------------------- ORDER BY, LIMIT ----------------------------
+SELECT * FROM customer WHERE state = 'California' ORDER BY customer_name;
+SELECT * FROM customer ORDER BY city ASC , customer_name DESC;
+SELECT * FROM customer ORDER BY 2 DESC; --uses second column
+
+SELECT * FROM customer LIMIT 8; --returns only 8 records
+SELECT * FROM sales WHERE discount > 0 ORDER BY discount LIMIT 10;
+
+------------------------------- Alias ---------------------------------
+SELECT customer_id AS "Serial number", 
+customer_name as Name, 
+age as Customer_age FROM customer;
+
+----------------------- Aggregate Commands COUNT ----------------------
+
+-- counts # of non-null values
+SELECT * FROM sales;
+SELECT COUNT(*) FROM sales; --all non-null rows in sales
+SELECT COUNT(order_line) as "Number of Products Ordered", 
+COUNT(DISTINCT(order_id)) AS "Number of Orders" 
+FROM sales WHERE customer_id ='CG-12520';
+
+----------------------- Aggregate Commands SUM ----------------------
+
+SELECT SUM(profit) AS "Total Profit" FROM sales;
+SELECT SUM(quantity) AS "Total Quantity" FROM sales WHERE product_id  = 'FUR-TA-10000577';
+
+----------------------- Aggregate Commands AVG ----------------------
+SELECT AVG(age) AS "Customer Avg Age" FROM customer;
+SELECT AVG(sales * 0.01) AS "Average Commission Value" FROM sales;
+
+----------------------- Aggregate Commands Min and Max ----------------------
+SELECT MIN(sales) AS Min_Sales FROM sales
+WHERE order_date BETWEEN '2015-06-01' AND '2015-06-30';
+
+SELECT sales FROM sales 
+WHERE order_date BETWEEN '2015-06-01' AND '2015-06-30'
+ORDER BY sales ASC;
+
+SELECT MAX(sales) AS Max_Sales FROM sales
+WHERE order_date BETWEEN '2015-06-01' AND '2015-06-30';
+SELECT SUM(sales) from sales;
+SELECT * FROM customer LIMIT 5;
+SELECT COUNT(*) AS Total_cust FROM customer 
+WHERE age BETWEEN 20 and 30 AND region ='South';
+
+SELECT AVG(age) AS "Customer Avgf age" FROM customer WHERE region = 'South';
+SELECT MIN(age), MAX(age) FROM customer WHERE city = 'Philadelphia';
+
+----------------------------- GROUP BY -------------------------------
+SELECT region, COUNT(customer_id) AS customer_count FROM customer
+GROUP BY region;
+SELECT product_id, SUM(quantity) AS quantity_sold FROM sales
+GROUP BY product_id ORDER BY quantity_sold DESC;
+
+SELECT customer_id, 
+MIN(sales) AS MinSales, 
+MAX(sales) AS MaxSales, 
+AVG(sales) AS AvgSales,
+SUM(sales) AS TotalSales 
+FROM sales GROUP by customer_id ORDER BY TotalSales DESC LIMIT 5;
+
+SELECT region, state, avg(age) as Avgage, COUNT(customer_id) as customer_count
+FROM customer GROUP BY region, state;
+
+-------------------------- HAVING ---------------------------------
+--used with GROUP BY to restrict groups of returned rows to only
+-- those whose condition is TRUE
+-- having is for aggregate functions, not rows
+SELECT region, COUNT(customer_id) AS customer_count 
+FROM customer GROUP BY region HAVING COUNT(customer_id)>200;
+
+SELECT region, COUNT(customer_id) AS customer_count FROM customer
+WHERE customer_name LIKE 'A%' GROUP BY region
+HAVING COUNT(customer_id)>15;
+
+SELECT * FROM sales;
+
+SELECT SUM(sales),SUM(Quantity), COUNT(DISTINCT(order_id)),
+MAX(sales), MIN(sales), AVG(sales) FROM sales;
+
+SELECT product_id, SUM(quantity) FROM sales GROUP BY product_id
+HAVING sum(quantity)>10;
+
+----------------------------- CASE ---------------------------------
+--similar to if else (case is like if), END
+-- CASE WHEN result WHEN result WHEN results ELSE result END
+-- when you want to assign categories to data
+SELECT *, CASE
+WHEN age >30 THEN 'Young'
+WHEN age>60 THEN 'Senior Citizen'
+ELSE 'Middle aged' END AS Age_category 
+FROM customer; 
+
+----------------------------- CREATING TABLE FOR JOINS ---------------------------------
+-- CREATE A TABLE FROM EXISTING TABLE USING SUBQUERY
+CREATE TABLE sales_2015 AS 
+SELECT * FROM sales WHERE ship_date BETWEEN '2015-01-01' AND
+'2015-12-31';
+SELECT COUNT(*) FROM sales_2015; --2131
+SELECT COUNT(DISTINCT customer_id) FROM sales_2015; --578
+
+CREATE TABLE customer_20_60 AS
+SELECT * FROM customer WHERE age BETWEEN 20 AND 60;
+SELECT COUNT(*) FROM customer_20_60; --597
+
+------------------------ INNER JOINS ----------------------------
+--INTERSECTION OF THE KEY USED
+--sales_2015
+--customer_20_60
+SELECT a.order_line, a.product_id, a.customer_id, a.sales,
+b.customer_name, b.age FROM sales_2015 AS a
+INNER JOIN customer_20_60 AS b
+ON a.customer_id = b.customer_id
+ORDER BY customer_id;
+
+SELECT customer_id FROM sales_2015 ORDER BY customer_id;
+SELECT customer_id FROM customer_20_60 ORDER BY customer_id;
+
+-------------------------- LEFT JOIN ---------------------------
+-- RETURN ALL VALUES FROM LEFT JOIN TALBE EVEN IF NONE IN OTHER
+-- AND THE OVERLAPS FROM B as well
+
+SELECT a.order_line, a.product_id, a.customer_id, a.sales,
+b.customer_name, b.age FROM sales_2015 AS a
+LEFT JOIN customer_20_60 AS b
+ON a.customer_id = b.customer_id
+ORDER BY customer_id; -- will have 10315 and 10375 not 10480
+
+-------------------------- LEFT JOIN ---------------------------
+-- RETURN ALL VALUES FROM RIGHT JOIN TALBE EVEN IF NONE IN OTHER
+-- AND THE OVERLAPS FROM A as well
+SELECT a.order_line, a.product_id, b.customer_id, a.sales,
+b.customer_name, b.age FROM sales_2015 AS a
+RIGHT JOIN customer_20_60 AS b
+ON a.customer_id = b.customer_id
+ORDER BY customer_id; -- 10315 not , 10375 yes, 10480 yes BUT IS NOT ON THE RIGHT HALF
+
+--------------------------- FULL JOIN --------------------------
+--get results of both tables
+
+SELECT a.order_line, a.product_id, a.customer_id, a.sales,
+b.customer_id, b.customer_name, b.age FROM sales_2015 AS a
+FULL JOIN customer_20_60 AS b
+ON a.customer_id = b.customer_id
+ORDER BY a.customer_id;
+
+---------------------------- CROSS JOIN -------------------------
+-- NOT same syntax, creates a cartesian product between 2 data sets
+-- good for repetitive data 
+--creating month/year tables for example
+CREATE TABLE month_values (MM integer);
+CREATE TABLE year_values (YYYY integer);
+
+INSERT INTO month_values VALUES (1),(2),(3),(4),(5),(6),
+(7),(8),(9),(10),(11),(12);
+INSERT INTO year_values VALUES (2011),(2012),(2013),(2014),(2015),
+(2016),(2017),(2018),(2019);
+SELECT * FROM month_values;
+SELECT * FROM year_values;
+
+SELECT a.YYYY, b.MM FROM year_values AS a, month_values AS b
+ORDER BY a.YYYY, b.MM;
+
+---------------------------- EXCEPT --------------------------
+-- used to return all rows in the first SELECT statement that
+-- are not returned by the second select statement
+-- REMOVES ROWS IN THE SECOND SELECT STATEMENT
+-- similar to venn diagram A NOT B
+
+SELECT customer_id FROM sales_2015 
+EXCEPT SELECT customer_id FROM customer_20_60 ORDER BY 
+customer_id;
+
+---------------------------- UNION ------------------------------
+-- used to combine the result sets of 2 or more select statements
+-- removes ducplicate rows between various select statements
+-- should have the same data types and expressions 
+-- can specify multiple
+
+--
+SELECT customer_id FROM sales_2015 UNION
+SELECT customer_id FROM customer_20_60 ORDER BY customer_id;
+
+--examples
+SELECT * FROM sales_2015;
+SELECT * FROM customer_20_60;
+
+SELECT SUM(a.sales) as Total, b.state FROM sales_2015 AS a
+INNER JOIN customer_20_60 AS b ON 
+a.customer_id = b.customer_id GROUP BY b.state ORDER BY Total DESC;
+
+--example
+SELECT * FROM sales;
+SELECT * FROM product;
+
+SELECT SUM(s.sales) AS Total_sales, SUM(s.quantity) AS Total_QTY,
+p.product_name FROM
+sales AS s INNER JOIN product as p ON
+s.product_id=p.product_id GROUP BY p.product_name
+ORDER BY Total_sales;
