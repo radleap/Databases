@@ -259,3 +259,95 @@ p.product_name FROM
 sales AS s INNER JOIN product as p ON
 s.product_id=p.product_id GROUP BY p.product_name
 ORDER BY Total_sales;
+
+---------------------------------- Subqueries ----------------------------------------
+-- a query within a query, saves resources
+-- can reside in WHERE/IN clause, FROM clause, or SELECT clause
+-- think of as a table already created that access with joins, or a lookup table with IN
+-- must enclose in parenthesis
+-- BETWEEN can be used with a subquery BUT not within a subquery
+SELECT * FROM sales WHERE customer_id IN 
+	(SELECT DISTINCT customer_id FROM customer WHERE age > 60);
+
+-- FROM 
+SELECT a.product_id, a.product_name,a.category, b.quantity FROM product as a
+LEFT JOIN 
+(SELECT product_id, SUM(quantity) AS quantity FROM sales GROUP BY product_id) AS b
+ON a.product_id = b.product_id ORDER BY b.quantity DESC;
+
+-- SELECT (only one column in the SELECT clause)
+SELECT customer_id, order_line,
+	(SELECT customer_name FROM customer WHERE sales.customer_id = customer.customer_id)
+FROM sales ORDER BY customer_id;
+
+--ex 
+SELECT * FROM sales LIMIT 5;
+SELECT * FROM customer LIMIT 5;
+SELECT * FROM product LIMIT 5;
+
+SELECT s.profit, c.customer_name,c.age, p.product_name, p.category FROM sales AS s
+INNER JOIN (SELECT customer_id, customer_name, age FROM customer) AS c ON s.customer_id=c.customer_id
+INNER JOIN (SELECT product_id, product_name, category FROM product) AS p ON s.product_id=p.product_id;
+
+----------------------------------- Views  -----------------------------------
+-- View is not a physical table, it is a virtual table 
+-- created by a query joining one or more tables
+-- ease of use, space savings, and data security
+-- give access so users only look at what they need
+-- CREATE OR REPLACE VIEW can be used instead of just CREATE View
+-- "CREATE OR REPLACE VIEW" updates or replaces
+-- recommend updating tables not views.
+
+CREATE VIEW logistics AS
+SELECT a.order_line, a.order_id, b.city, b.state, b.country
+FROM sales AS a LEFT JOIN customer AS b ON a.customer_id=b.customer_id
+ORDER BY a.order_line;
+
+SELECT * FROM logistics; 
+
+DROP VIEW logistics; -- to delete
+
+-------------------------------------- INDEXES ----------------------------------------
+-- performance gaining method allowing faster retrieval of records
+-- an index creates an entry for each value that appears in the indexed columns
+-- like an index in a book 
+-- simple index = 1 column; composity index = >1 columns
+-- con is it takes longer to update the table
+-- build only when necessary
+
+CREATE INDEX mon_idx ON month_values(MM); -- usually _idx nomenclature
+--automatically go and update/change index
+DROP INDEX IF EXISTS mon_idx;   -- CASCADE deletes dependent objects; restrict block the deletion and get error
+ALTER INDEX IF EXISTS mon_idx RENAME TO month_idx;
+
+
+--------------------------------- PARTITION AND RANKING ---------------------------------
+-- ROW_NUMBER() OVER(PARTITION BY ____ ORDER BY ______) AS _____ FROM _____;
+-- https://learnsql.com/cookbook/how-to-select-the-first-row-in-each-group-by-group/
+SELECT order_date, ship_mode, 
+ROW_NUMBER() OVER(PARTITION BY ship_mode ORDER BY order_date) AS RANK
+FROM sales;
+
+WITH blah AS (SELECT order_date, ship_mode, 
+ROW_NUMBER() OVER(PARTITION BY ship_mode ORDER BY order_date) AS rank
+FROM sales)
+SELECT * FROM blah WHERE rank <3 
+
+--ex
+--CREATE A VIEW containing order_line, product_id, sales,discount
+-- and the value of the first order date in the sales table and name the view Daily_Billing
+--CREATE OR REPLACE VIEW Daily_Billing
+
+SELECT * FROM sales
+
+WITH r AS (SELECT product_id, 
+ROW_NUMBER() OVER(PARTITION BY product_id ORDER BY order_date) AS rank
+FROM sales)
+SELECT s.order_line, s.product_id, s.sales, s.discount, r.rank FROM sales AS s
+LEFT JOIN r ON s.product_id=r.product_id
+WHERE r.rank <5 ORDER BY s.product_id ASC, r.rank ASC ;
+
+-- WITH blah AS (SELECT product_id, order_date, ship_mode, 
+-- ROW_NUMBER() OVER(PARTITION BY ship_mode ORDER BY order_date) AS rank
+-- FROM sales)
+-- SELECT * FROM blah WHERE rank <3 
