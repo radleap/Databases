@@ -328,6 +328,9 @@ SELECT order_date, ship_mode,
 ROW_NUMBER() OVER(PARTITION BY ship_mode ORDER BY order_date) AS RANK
 FROM sales;
 
+SELECT COUNT(*) FROM sales;
+SELECT * FROM sales;
+
 WITH blah AS (SELECT order_date, ship_mode, 
 ROW_NUMBER() OVER(PARTITION BY ship_mode ORDER BY order_date) AS rank
 FROM sales)
@@ -338,16 +341,168 @@ SELECT * FROM blah WHERE rank <3
 -- and the value of the first order date in the sales table and name the view Daily_Billing
 --CREATE OR REPLACE VIEW Daily_Billing
 
-SELECT * FROM sales
-
-WITH r AS (SELECT product_id, 
+--using the primary key order_line is needed for unique entries
+-- partitioning creating the rank field based on the order date, partitioned by product_id
+CREATE VIEW Daily_Billing AS
+WITH r AS (SELECT order_date, product_id, order_line, 
 ROW_NUMBER() OVER(PARTITION BY product_id ORDER BY order_date) AS rank
 FROM sales)
-SELECT s.order_line, s.product_id, s.sales, s.discount, r.rank FROM sales AS s
-LEFT JOIN r ON s.product_id=r.product_id
-WHERE r.rank <5 ORDER BY s.product_id ASC, r.rank ASC ;
+SELECT r.*, s.sales, s.discount FROM r  
+LEFT JOIN sales as s ON s.order_line = r.order_line
+WHERE r.rank <3 ORDER BY r.product_id, r.rank;
 
--- WITH blah AS (SELECT product_id, order_date, ship_mode, 
--- ROW_NUMBER() OVER(PARTITION BY ship_mode ORDER BY order_date) AS rank
--- FROM sales)
--- SELECT * FROM blah WHERE rank <3 
+SELECT * FROM Daily_Billing;
+DROP VIEW Daily_Billing;
+--------------------------------String functions --------------------------------------
+------------------------------------ LENGTH -------------------------------------------
+-- returns the length of a string, expressed as the number of characters
+-- useful when sms lengths matter
+SELECT Customer_name, LENGTH(Customer_name) as character_num
+FROM customer WHERE age > 30;
+------------------------------------ UPPER LOWER -------------------------------------------
+-- used to convert the case to lower or upper
+-- useful when matching strings
+SELECT UPPER('Eat the Burger');
+SELECT LOWER('Eat the Burger');
+------------------------------------  REPLACE  -------------------------------------------
+-- used to replace characters, in a string, with other characters
+-- replace(string or column, from_substring, to sub_string)
+-- THIS IS CASE SENSITIVE (if united instead of )
+SELECT customer_name, country,
+REPLACE(country,'United States','US') AS country_new
+FROM customer;
+
+SELECT customer_name, country,
+REPLACE(LOWER(country),'united States','US') AS country_new -- not replace need UPDATE TABLE command otherwise
+FROM customer;
+------------------------------------  TRIM  -------------------------------------------
+-- TRIM, RTRIM, LTRIM
+-- trim() can do either Rtrim or Ltrim using the leading or trailing
+-- trim([leading|trailing|both] [trim_character] from string)
+-- rtrim(string, trim_character) ... same for ltrim
+-- mainly used to clean data (such as of spaces) for matching strings
+-- whenever matching columns on strings without standardized data
+
+SELECT TRIM(LEADING ' ' FROM '     Eat the burger      ');
+SELECT TRIM(TRAILING ' ' FROM '     Eat the burger      ');
+SELECT TRIM(BOTH ' ' FROM '     Eat the burger      ');
+SELECT TRIM('     Eat the burger      ');
+SELECT RTRIM('     Eat the burger      ', ' ');
+SELECT LTRIM('     Eat the burger      ', ' ');
+
+------------------------------------  || concatenation ------------------------------------
+-- || operator allows you to concatenate 2 or more strings together
+-- string1 || string2 || string_n
+-- piping operator
+
+SELECT customer_name, city || ', ' || state || ', ' || country as address
+FROM customer;
+
+------------------------------------  substring  ------------------------------------
+-- to extract a substring from a string
+-- substring( string [FROM start_position] [FOR length])
+
+-- not need FROM if the start
+SELECT customer_id, customer_name, SUBSTRING(customer_id FOR 2) AS cust_group
+FROM customer
+
+SELECT customer_id, customer_name, SUBSTRING(customer_id FOR 2) AS cust_group
+FROM customer WHERE SUBSTRING(customer_id FOR 2) ='AB';
+
+SELECT customer_id, customer_name,
+SUBSTRING(customer_id FROM 4 FOR 5) AS cust_num
+FROM customer 
+WHERE SUBSTRING(customer_id FOR 2)='AB';
+
+----------------------------- String Aggregator -----------------------------------
+-- concatentes input values into a strong, separated by delimiter
+-- STRING_AGG(expression, delimiter)
+-- || is used for different columns
+-- STRING_AGG is used for different values IN a column
+
+-- in sales table orders with multiple product_ids ... this gets all in a row
+SELECT order_id, STRING_AGG(product_id, ',') AS All_products
+FROM sales GROUP BY order_id;
+
+
+-- ex
+-- max product name legnth
+SELECT * FROM product;
+SELECT product_name, LENGTH(product_name) AS char_length 
+FROM product ORDER BY char_length DESC;
+SELECT MAX(LENGTH(product_name)) FROM product;
+--ex
+SELECT product_name, sub_category, category,
+product_name||sub_category||category AS product_details
+FROM product;
+--ex
+SELECT product_id FROM product;
+SELECT product_id,
+SUBSTRING(product_id FOR 3) AS one,
+SUBSTRING(product_id FROM 5 FOR 2) AS two,
+SUBSTRING(product_id FROM 8) AS three
+FROM product;
+--ex list comma sep product name where sub_cat is either chairs or tables
+SELECT * FROM product;
+SELECT sub_category, STRING_AGG(product_name,',') AS Conn
+FROM product 
+WHERE sub_category ='Chairs' OR sub_category ='Tables' GROUP BY sub_category
+;
+
+-------------------------------- Mathematical Functions -----------------------------------
+-------------------------------------  CEIL & FLOOR ---------------------------------------
+-- CEIL() returns the smallest integer value that is greater than a number
+-- FLOOR() returns the largest integer value that is less than a number
+
+SELECT order_line, sales, CEIL(sales),FLOOR(sales) 
+FROM sales WHERE discount >0;
+
+-------------------------------------  RANDOM ---------------------------------------
+-- generates a random number between 0 and 1; including 0 not 1
+-- often want a different range, so need 10-20
+-- random decimal -- SELECT RANDOM()*(20-10)+10 for range of 10 to 20 with decimals
+-- random integer -- SELECT FLOOR(RANDOM()*(b-a+1))+a -- range of integer 10 to 20 
+
+SELECT RANDOM(), 
+RANDOM() * (50-10) + 10, --decimal btw 10 and 50
+FLOOR(RANDOM() * (50-10)+10) --integer btw 10 and 50
+
+-------------------------------------  SETSEED ---------------------------------------
+-- if set, the random function will return a repeatable sequence of random numbers that
+-- is derived from the seed
+-- SETSEED(seed) ... can be between 1.0 and -1.0 inclusive
+SELECT SETSEED(0.5);
+SELECT RANDOM(); --0.24991 first after the set seed is always the same
+SELECT RANDOM(); -- will be different since second execution
+
+-------------------------------------  ROUND ---------------------------------------
+-- rounds a number to a certain number of decimal, nearest integer value
+-- ROUND(number)
+SELECT order_line, sales, ROUND(sales) FROM sales;
+
+-------------------------------------  POWER ---------------------------------------
+-- gives m to the power n
+-- POWER(m,n)
+
+SELECT POWER(6,2);
+SELECT age, POWER(age,2) FROM customer ORDER BY age;
+
+-- ex five randomly picked customers
+
+WITH r AS
+(SELECT customer_name, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS row_num
+FROM customer) SELECT c.customer_name, r.row_num  FROM customer AS c
+LEFT JOIN r ON c.customer_name = r.customer_name
+WHERE r.row_num  in (24,27)
+
+SELECT FLOOR(RANDOM()*746)) 
+
+SELECT FLOOR(RANDOM()*746), FLOOR(RANDOM()*746), FLOOR(RANDOM()*746)
+
+
+
+
+WITH blah AS (SELECT order_date, ship_mode, 
+ROW_NUMBER() OVER(PARTITION BY ship_mode ORDER BY order_date) AS rank
+FROM sales)
+SELECT * FROM blah WHERE rank <3 
