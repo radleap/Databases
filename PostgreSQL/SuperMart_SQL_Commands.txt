@@ -489,20 +489,120 @@ SELECT age, POWER(age,2) FROM customer ORDER BY age;
 
 -- ex five randomly picked customers
 
-WITH r AS
-(SELECT customer_name, ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS row_num
-FROM customer) SELECT c.customer_name, r.row_num  FROM customer AS c
-LEFT JOIN r ON c.customer_name = r.customer_name
-WHERE r.row_num  in (24,27)
+SELECT customer_id, RANDOM() as random_n FROM customer ORDER BY random_n LIMIT 5;
 
-SELECT FLOOR(RANDOM()*746)) 
+-------------------------------------  CURRENT DATE & TIME ---------------------------------------
+-- CURRENT_DATE function returns the current data. 'YYYY-MM-DD'
+-- CURRENT_TIME function returens the current time with the local time zone. 'HH:MM:SS.GMT+TZ'
+-- CURRENT_TIMESTAMP function returns the current date and time
+-- with the localtime zone.'YYYY-MM-DD HH:MM:SS.GMT+TZ'
+-- Useful when inserting new rows, so each order has the order date; figure out age of person.
 
-SELECT FLOOR(RANDOM()*746), FLOOR(RANDOM()*746), FLOOR(RANDOM()*746)
+SELECT CURRENT_DATE, CURRENT_TIME, CURRENT_TIME(1), CURRENT_TIMESTAMP;
+-- the (1) on CURRENT_TIME is the precision of the seconds, 1 decimal point only
+
+-------------------------------------  AGE ---------------------------------------
+-- AGE function returns the number of years, months, and days between two dates
+-- AGE(Date1,Date2) ... if date1 is not provided the current date will be used
+
+SELECT age('2014-04-25', '2014-01-01');
+
+SELECT order_line, ship_date, order_date, 
+AGE(ship_date,order_date) AS TimeTaken
+FROM sales ORDER BY TimeTaken DESC;
+
+-------------------------------------  EXTRACT ---------------------------------------
+-- EXTRACT function extracts parts from a date
+-- EXTRACT('unit' FROM 'date')
+-- Types: day, decade, doy, epoch, hour, minute, month, second, year .. others as well
+-- EPOCH is seconds since '1970-01-01 00:00:00 UTC'
+
+SELECT EXTRACT(DAY FROM CURRENTDATE,);
+SELECT CURRENT_TIMESTAMP, EXTRACT(HOUR FROM CURRENT_TIMESTAMP);
+
+SELECT order_date, ship_date,
+EXTRACT(EPOCH FROM (ship_date - order_date)) FROM sales; -- will error bc shidate-ordedate gives an integer
+
+SELECT order_date, ship_date,
+EXTRACT(EPOCH FROM ship_date) - EXTRACT(EPOCH FROM order_date) --gives seconds
+FROM sales;
+
+--ex
+SELECT EXTRACT(day FROM TO_DATE('1939-04-06','YYY-MM-DD'));
+SELECT AGE(CURRENT_DATE, TO_DATE('1939-04-06','YYY-MM-DD')); -- Age of batman haha
+
+--ex monthly sales of subcateorgy for chairs
+SELECT * FROM sales;
+SELECT * FROM product; -- PK is product_id
+
+SELECT SUM(s.sales) AS SalesByMonth,
+EXTRACT(MONTH from s.order_date) AS month
+FROM sales AS s 
+LEFT JOIN product AS p ON s.product_id = p.product_id
+WHERE p.sub_category = 'Chairs'
+GROUP BY month ORDER BY month ASC;
+
+---------------------------------------- PATTERN MATCHING ------------------------------------
+-- LIKE, SIMILAR TO, ~(Regular Expressions)
+-- use LIKE for simpler queries and RegEx for more complex
+-- AVOID using SIMILAR TO, uses REGEX internally and is slow option
+-- wildcards of LIKE statements and REGEX are different
+-- like perform on the whole string, whereas regex just part if needed
+--Like wildcards % (match any string of any length), _ for a single character
+
+SELECT * FROM sales WHERE ship_mode LIKE 'Se%';
+SELECT * FROM sales WHERE ship_mode NOT LIKE 'Se%';
+
+---------------------------------------- ADANCED PATTERN MATCHING (RegEx) ---------------------
+-- | is either of two alternatives
+-- * repition of the previous item zero or more times
+-- + repition of the previous item one of more times
+-- ? Denotes repition of the previous item zero or one time
+-- {m} denotes repition of the previous item exactly m times
+-- {m,} denotes repition of the previous item m or more times
+-- {m,n} denotes the repotion of the previous item at least m and not more than n times
+-- ^,$ ... ^ denotes the start of the string, $ denotes the end of string
+-- [chars] a bracket expression, matching any one of the characters
+-- ~* ... ~ means case sensitive, ~* means case insensitive
+
+create table users(id serial primary key, name character varying);
+
+insert into users (name) VALUES 
+('Alex'), ('Jon Snow'), ('Christopher'), ('Arya'),('Sandip Debnath'), ('Lakshmi'),
+('alex@gmail.com'),('@sandip5004'), ('lakshmi@gmail.com');
+
+SELECT * FROM users;
+-- all customers with a start, and then anything after using [a-z\s], \s denotes space also
+-- the + following [a-z/s] for other positions as well, and the end of string is $
+SELECT * FROM customer WHERE customer_name ~*'^a+[a-z\s]+$'; -- ^ start of string
+--name starts with a-d
+SELECT * FROM customer WHERE customer_name ~*'^(a|b|c|d)+[a-z\s]+$' 
+-- name starts with a-d, followed by 3 letters, followed by a space, then 4 letters
+SELECT * FROM customer WHERE customer_name ~*'^(a|b|c|d)[a-z]{3}\s[a-z]{4}$'
+SELECT * FROM customer WHERE customer_name ~*'^(a|b|c|d)+[a-z]{3}\s[a-z]{4}$' --not difference here
+-- getting emails
+-- allows any case, first [] allows any number/letter/./-/_ 
+-- followed by the @ symbol, followed by [] any letter/number/- 
+-- followed by . followed by [] of any letter length 3-5
+-- + does not concatenate it is any number of previous [] 
+SELECT * FROM users WHERE name ~*'[a-z0-9\.\-\_]+@[a-z0-9\-]+\.[a-z]{3,5}';
+SELECT * FROM users WHERE name ~*'^[a-z0-9\.\-\_]+@[a-z0-9\-]+\.[a-z]{2,5}$'; --same
+
+DROP TABLE users;
+--ex
+--find all customers who have first name and last name of 5 charactaer each 
+--and last name starts with a/b/c/d
+SELECT * FROM customer WHERE customer_name ~*'^[a-z]{5}\s(a|b|c|d){1}[a-z]{4}$'
+
+-- CREATE zipcode table and insert data 234432,23345,sdfe4,123&3,67424,7895432,12312
+-- find all valid zipcodes from this table (5 or 6 number characers)
+CREATE TABLE zipcode (zip varchar);
+INSERT INTO zipcode (zip) VALUES
+(234432),(23345),('sdfe4'),('123&3'),(67424),(7895432),(12312);
+SELECT * FROM zipcode;
+SELECT * FROM zipcode WHERE zip ~'^[0-9]{5,6}$';
+
+-------------------------------------- DATA TYPE CONVERSION ------------------------------------
 
 
 
-
-WITH blah AS (SELECT order_date, ship_mode, 
-ROW_NUMBER() OVER(PARTITION BY ship_mode ORDER BY order_date) AS rank
-FROM sales)
-SELECT * FROM blah WHERE rank <3 
