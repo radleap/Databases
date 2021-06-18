@@ -1,3 +1,32 @@
+--------------------------------------------   Introduction -------------------------------------
+-- IBM, original named SQL
+-- controlled access, data manipulation, business insights
+-- software developers, database manager, business managers (analysts,DS,...)
+-- Database is an organized tool, of data and metadata (data structure, data about data), that can be queried
+-- RDBMS = relational database (tables); record = row; attribute = column; cell = intersection of row/column
+
+-- DBMS (Database Management System)
+-- allows creation of new DB and data structures
+-- Allows modification of data, retrieval of data, storage over time, recovery if failure, access control
+
+-- SQL Queries
+-- DDL data definition language (define structure of database)
+-- DML data manipulation language (add change delete data)
+-- DQL data query language (querying with select)
+-- DLC data control language (GRANT, REVOKE privaledges from users)
+-- TCC transaction control language (COMMIT, ROLLBACK and manipulate/maintain data integrity)
+
+-- PostgreSQL
+-- an advanced object-relations database management system that supports extended subset of SQL stanrdar
+-- including trasactions, foreign keys, subqueries, triggers, user-defined types and functions
+-- gaining popularity due to indexing; mySQL is most popular
+-- supported by all major cloud providers; ACID compliant; 
+-- good documentation; best for data warehousing and analysis better read/wrute speeds than mySQL
+-- used by instagram, spotify, netflix, instacart, uber, reddit
+
+
+
+--------------------------------------------   CREATING TABLEs -------------------------------------
 CREATE TABLE customer (
 	customer_id varchar PRIMARY KEY,
 	customer_name varchar,
@@ -34,15 +63,17 @@ COPY sales FROM 'C:\Program Files\PostgreSQL\13\data\data_ben\Sales.csv' CSV HEA
 
 SELECT * FROM product;
 
--------------- IN CONDITION FOR MULTIPLE CONDITIONS ----------------- 
+--------------------------------------------  IN CONDITION FOR MULTIPLE CONDITIONS ----------------- 
 SELECT * FROM customer WHERE city IN ('Philadelphia','Seattle');
 SELECT * FROM customer WHERE city='Philadelphia' OR city='Seattle';
--------------- BETWEEN CONDITION  ----------------------------------- 
+
+--------------------------------------------   BETWEEN CONDITION  ----------------------------------- 
 SELECT * FROM customer WHERE age BETWEEN 20 AND 30;
 SELECT * FROM customer WHERE age >=20 AND <= 30;
 SELECT * FROM customer WHERE age NOT BETWEEN 20 and 30;
 SELECT * FROM sales WHERE ship_date BETWEEN '2015-04-01' AND '2016-04-01';
--------------- LIKE CONDITION  ----------------------------------- 
+
+-------------------------------------------- LIKE CONDITION  ----------------------------------- 
 -- used for pattern matching and as a wildcard
 -- wildecard is % match any length including zero length
 -- the underscore _ allows you to match on a single character
@@ -58,7 +89,7 @@ SELECT DISTINCT city FROM customer WHERE city NOT LIKE 'S%';
 --escape character want the %
 SELECT * FROM customer WHERE customer_name LIKE 'G\%';
 
-------------------------- ORDER BY, LIMIT ----------------------------
+--------------------------------------------  ORDER BY, LIMIT ----------------------------
 SELECT * FROM customer WHERE state = 'California' ORDER BY customer_name;
 SELECT * FROM customer ORDER BY city ASC , customer_name DESC;
 SELECT * FROM customer ORDER BY 2 DESC; --uses second column
@@ -66,12 +97,12 @@ SELECT * FROM customer ORDER BY 2 DESC; --uses second column
 SELECT * FROM customer LIMIT 8; --returns only 8 records
 SELECT * FROM sales WHERE discount > 0 ORDER BY discount LIMIT 10;
 
-------------------------------- Alias ---------------------------------
+-------------------------------------------- Alias ---------------------------------
 SELECT customer_id AS "Serial number", 
 customer_name as Name, 
 age as Customer_age FROM customer;
 
------------------------ Aggregate Commands COUNT ----------------------
+-------------------------------------------- Aggregate Commands COUNT ----------------------
 
 -- counts # of non-null values
 SELECT * FROM sales;
@@ -80,16 +111,16 @@ SELECT COUNT(order_line) as "Number of Products Ordered",
 COUNT(DISTINCT(order_id)) AS "Number of Orders" 
 FROM sales WHERE customer_id ='CG-12520';
 
------------------------ Aggregate Commands SUM ----------------------
+-------------------------------------------- Aggregate Commands SUM ----------------------
 
 SELECT SUM(profit) AS "Total Profit" FROM sales;
 SELECT SUM(quantity) AS "Total Quantity" FROM sales WHERE product_id  = 'FUR-TA-10000577';
 
------------------------ Aggregate Commands AVG ----------------------
+--------------------------------------------  Aggregate Commands AVG ----------------------
 SELECT AVG(age) AS "Customer Avg Age" FROM customer;
 SELECT AVG(sales * 0.01) AS "Average Commission Value" FROM sales;
 
------------------------ Aggregate Commands Min and Max ----------------------
+-------------------------------------------- Aggregate Commands Min and Max ----------------------
 SELECT MIN(sales) AS Min_Sales FROM sales
 WHERE order_date BETWEEN '2015-06-01' AND '2015-06-30';
 
@@ -107,7 +138,7 @@ WHERE age BETWEEN 20 and 30 AND region ='South';
 SELECT AVG(age) AS "Customer Avgf age" FROM customer WHERE region = 'South';
 SELECT MIN(age), MAX(age) FROM customer WHERE city = 'Philadelphia';
 
------------------------------ GROUP BY -------------------------------
+-------------------------------------------- GROUP BY -------------------------------
 SELECT region, COUNT(customer_id) AS customer_count FROM customer
 GROUP BY region;
 SELECT product_id, SUM(quantity) AS quantity_sold FROM sales
@@ -123,7 +154,7 @@ FROM sales GROUP by customer_id ORDER BY TotalSales DESC LIMIT 5;
 SELECT region, state, avg(age) as Avgage, COUNT(customer_id) as customer_count
 FROM customer GROUP BY region, state;
 
--------------------------- HAVING ---------------------------------
+--------------------------------------------  HAVING ---------------------------------
 --used with GROUP BY to restrict groups of returned rows to only
 -- those whose condition is TRUE
 -- having is for aggregate functions, not rows
@@ -142,7 +173,7 @@ MAX(sales), MIN(sales), AVG(sales) FROM sales;
 SELECT product_id, SUM(quantity) FROM sales GROUP BY product_id
 HAVING sum(quantity)>10;
 
------------------------------ CASE ---------------------------------
+--------------------------------------------  CASE ---------------------------------
 --similar to if else (case is like if), END
 -- CASE WHEN result WHEN result WHEN results ELSE result END
 -- when you want to assign categories to data
@@ -152,7 +183,7 @@ WHEN age>60 THEN 'Senior Citizen'
 ELSE 'Middle aged' END AS Age_category 
 FROM customer; 
 
------------------------------ CREATING TABLE FOR JOINS ---------------------------------
+--------------------------------------------  CREATING TABLE FOR JOINS ---------------------------------
 -- CREATE A TABLE FROM EXISTING TABLE USING SUBQUERY
 CREATE TABLE sales_2015 AS 
 SELECT * FROM sales WHERE ship_date BETWEEN '2015-01-01' AND
@@ -164,7 +195,7 @@ CREATE TABLE customer_20_60 AS
 SELECT * FROM customer WHERE age BETWEEN 20 AND 60;
 SELECT COUNT(*) FROM customer_20_60; --597
 
------------------------- INNER JOINS ----------------------------
+--------------------------------------------   INNER JOINS ----------------------------
 --INTERSECTION OF THE KEY USED
 --sales_2015
 --customer_20_60
@@ -177,7 +208,7 @@ ORDER BY customer_id;
 SELECT customer_id FROM sales_2015 ORDER BY customer_id;
 SELECT customer_id FROM customer_20_60 ORDER BY customer_id;
 
--------------------------- LEFT JOIN ---------------------------
+--------------------------------------------    LEFT JOIN ---------------------------
 -- RETURN ALL VALUES FROM LEFT JOIN TALBE EVEN IF NONE IN OTHER
 -- AND THE OVERLAPS FROM B as well
 
@@ -187,7 +218,7 @@ LEFT JOIN customer_20_60 AS b
 ON a.customer_id = b.customer_id
 ORDER BY customer_id; -- will have 10315 and 10375 not 10480
 
--------------------------- LEFT JOIN ---------------------------
+--------------------------------------------   LEFT JOIN ---------------------------
 -- RETURN ALL VALUES FROM RIGHT JOIN TALBE EVEN IF NONE IN OTHER
 -- AND THE OVERLAPS FROM A as well
 SELECT a.order_line, a.product_id, b.customer_id, a.sales,
@@ -196,7 +227,7 @@ RIGHT JOIN customer_20_60 AS b
 ON a.customer_id = b.customer_id
 ORDER BY customer_id; -- 10315 not , 10375 yes, 10480 yes BUT IS NOT ON THE RIGHT HALF
 
---------------------------- FULL JOIN --------------------------
+--------------------------------------------    FULL JOIN --------------------------
 --get results of both tables
 
 SELECT a.order_line, a.product_id, a.customer_id, a.sales,
@@ -205,7 +236,7 @@ FULL JOIN customer_20_60 AS b
 ON a.customer_id = b.customer_id
 ORDER BY a.customer_id;
 
----------------------------- CROSS JOIN -------------------------
+--------------------------------------------  CROSS JOIN -------------------------
 -- NOT same syntax, creates a cartesian product between 2 data sets
 -- good for repetitive data 
 --creating month/year tables for example
@@ -222,7 +253,7 @@ SELECT * FROM year_values;
 SELECT a.YYYY, b.MM FROM year_values AS a, month_values AS b
 ORDER BY a.YYYY, b.MM;
 
----------------------------- EXCEPT --------------------------
+--------------------------------------------  EXCEPT --------------------------
 -- used to return all rows in the first SELECT statement that
 -- are not returned by the second select statement
 -- REMOVES ROWS IN THE SECOND SELECT STATEMENT
@@ -232,7 +263,7 @@ SELECT customer_id FROM sales_2015
 EXCEPT SELECT customer_id FROM customer_20_60 ORDER BY 
 customer_id;
 
----------------------------- UNION ------------------------------
+--------------------------------------------  UNION ------------------------------
 -- used to combine the result sets of 2 or more select statements
 -- removes ducplicate rows between various select statements
 -- should have the same data types and expressions 
@@ -260,7 +291,7 @@ sales AS s INNER JOIN product as p ON
 s.product_id=p.product_id GROUP BY p.product_name
 ORDER BY Total_sales;
 
----------------------------------- Subqueries ----------------------------------------
+--------------------------------------------  Subqueries ----------------------------------------
 -- a query within a query, saves resources
 -- can reside in WHERE/IN clause, FROM clause, or SELECT clause
 -- think of as a table already created that access with joins, or a lookup table with IN
@@ -289,7 +320,7 @@ SELECT s.profit, c.customer_name,c.age, p.product_name, p.category FROM sales AS
 INNER JOIN (SELECT customer_id, customer_name, age FROM customer) AS c ON s.customer_id=c.customer_id
 INNER JOIN (SELECT product_id, product_name, category FROM product) AS p ON s.product_id=p.product_id;
 
------------------------------------ Views  -----------------------------------
+---------------------------------------------  Views  -----------------------------------
 -- View is not a physical table, it is a virtual table 
 -- created by a query joining one or more tables
 -- ease of use, space savings, and data security
@@ -307,7 +338,7 @@ SELECT * FROM logistics;
 
 DROP VIEW logistics; -- to delete
 
--------------------------------------- INDEXES ----------------------------------------
+--------------------------------------------  INDEXES ----------------------------------------
 -- performance gaining method allowing faster retrieval of records
 -- an index creates an entry for each value that appears in the indexed columns
 -- like an index in a book 
@@ -321,7 +352,7 @@ DROP INDEX IF EXISTS mon_idx;   -- CASCADE deletes dependent objects; restrict b
 ALTER INDEX IF EXISTS mon_idx RENAME TO month_idx;
 
 
---------------------------------- PARTITION AND RANKING ---------------------------------
+--------------------------------------------  PARTITION AND RANKING ---------------------------------
 -- ROW_NUMBER() OVER(PARTITION BY ____ ORDER BY ______) AS _____ FROM _____;
 -- https://learnsql.com/cookbook/how-to-select-the-first-row-in-each-group-by-group/
 SELECT order_date, ship_mode, 
@@ -353,18 +384,18 @@ WHERE r.rank <3 ORDER BY r.product_id, r.rank;
 
 SELECT * FROM Daily_Billing;
 DROP VIEW Daily_Billing;
---------------------------------String functions --------------------------------------
------------------------------------- LENGTH -------------------------------------------
+-------------------------------------------- String functions --------------------------------------
+--------------------------------------------  LENGTH -------------------------------------------
 -- returns the length of a string, expressed as the number of characters
 -- useful when sms lengths matter
 SELECT Customer_name, LENGTH(Customer_name) as character_num
 FROM customer WHERE age > 30;
------------------------------------- UPPER LOWER -------------------------------------------
+--------------------------------------------  UPPER LOWER -------------------------------------------
 -- used to convert the case to lower or upper
 -- useful when matching strings
 SELECT UPPER('Eat the Burger');
 SELECT LOWER('Eat the Burger');
-------------------------------------  REPLACE  -------------------------------------------
+--------------------------------------------   REPLACE  -------------------------------------------
 -- used to replace characters, in a string, with other characters
 -- replace(string or column, from_substring, to sub_string)
 -- THIS IS CASE SENSITIVE (if united instead of )
@@ -375,7 +406,7 @@ FROM customer;
 SELECT customer_name, country,
 REPLACE(LOWER(country),'united States','US') AS country_new -- not replace need UPDATE TABLE command otherwise
 FROM customer;
-------------------------------------  TRIM  -------------------------------------------
+--------------------------------------------   TRIM  -------------------------------------------
 -- TRIM, RTRIM, LTRIM
 -- trim() can do either Rtrim or Ltrim using the leading or trailing
 -- trim([leading|trailing|both] [trim_character] from string)
@@ -390,7 +421,7 @@ SELECT TRIM('     Eat the burger      ');
 SELECT RTRIM('     Eat the burger      ', ' ');
 SELECT LTRIM('     Eat the burger      ', ' ');
 
-------------------------------------  || concatenation ------------------------------------
+--------------------------------------------   || concatenation ------------------------------------
 -- || operator allows you to concatenate 2 or more strings together
 -- string1 || string2 || string_n
 -- piping operator
@@ -398,7 +429,7 @@ SELECT LTRIM('     Eat the burger      ', ' ');
 SELECT customer_name, city || ', ' || state || ', ' || country as address
 FROM customer;
 
-------------------------------------  substring  ------------------------------------
+--------------------------------------------   substring  ------------------------------------
 -- to extract a substring from a string
 -- substring( string [FROM start_position] [FOR length])
 
@@ -414,7 +445,7 @@ SUBSTRING(customer_id FROM 4 FOR 5) AS cust_num
 FROM customer 
 WHERE SUBSTRING(customer_id FOR 2)='AB';
 
------------------------------ String Aggregator -----------------------------------
+--------------------------------------------  String Aggregator -----------------------------------
 -- concatentes input values into a strong, separated by delimiter
 -- STRING_AGG(expression, delimiter)
 -- || is used for different columns
@@ -449,15 +480,15 @@ FROM product
 WHERE sub_category ='Chairs' OR sub_category ='Tables' GROUP BY sub_category
 ;
 
--------------------------------- Mathematical Functions -----------------------------------
--------------------------------------  CEIL & FLOOR ---------------------------------------
+--------------------------------------------  Mathematical Functions -----------------------------------
+--------------------------------------------   CEIL & FLOOR ---------------------------------------
 -- CEIL() returns the smallest integer value that is greater than a number
 -- FLOOR() returns the largest integer value that is less than a number
 
 SELECT order_line, sales, CEIL(sales),FLOOR(sales) 
 FROM sales WHERE discount >0;
 
--------------------------------------  RANDOM ---------------------------------------
+--------------------------------------------   RANDOM ---------------------------------------
 -- generates a random number between 0 and 1; including 0 not 1
 -- often want a different range, so need 10-20
 -- random decimal -- SELECT RANDOM()*(20-10)+10 for range of 10 to 20 with decimals
@@ -467,7 +498,7 @@ SELECT RANDOM(),
 RANDOM() * (50-10) + 10, --decimal btw 10 and 50
 FLOOR(RANDOM() * (50-10)+10) --integer btw 10 and 50
 
--------------------------------------  SETSEED ---------------------------------------
+--------------------------------------------   SETSEED ---------------------------------------
 -- if set, the random function will return a repeatable sequence of random numbers that
 -- is derived from the seed
 -- SETSEED(seed) ... can be between 1.0 and -1.0 inclusive
@@ -475,12 +506,12 @@ SELECT SETSEED(0.5);
 SELECT RANDOM(); --0.24991 first after the set seed is always the same
 SELECT RANDOM(); -- will be different since second execution
 
--------------------------------------  ROUND ---------------------------------------
+--------------------------------------------   ROUND ---------------------------------------
 -- rounds a number to a certain number of decimal, nearest integer value
 -- ROUND(number)
 SELECT order_line, sales, ROUND(sales) FROM sales;
 
--------------------------------------  POWER ---------------------------------------
+--------------------------------------------   POWER ---------------------------------------
 -- gives m to the power n
 -- POWER(m,n)
 
@@ -491,7 +522,7 @@ SELECT age, POWER(age,2) FROM customer ORDER BY age;
 
 SELECT customer_id, RANDOM() as random_n FROM customer ORDER BY random_n LIMIT 5;
 
--------------------------------------  CURRENT DATE & TIME ---------------------------------------
+--------------------------------------------   CURRENT DATE & TIME ---------------------------------------
 -- CURRENT_DATE function returns the current data. 'YYYY-MM-DD'
 -- CURRENT_TIME function returens the current time with the local time zone. 'HH:MM:SS.GMT+TZ'
 -- CURRENT_TIMESTAMP function returns the current date and time
@@ -501,7 +532,7 @@ SELECT customer_id, RANDOM() as random_n FROM customer ORDER BY random_n LIMIT 5
 SELECT CURRENT_DATE, CURRENT_TIME, CURRENT_TIME(1), CURRENT_TIMESTAMP;
 -- the (1) on CURRENT_TIME is the precision of the seconds, 1 decimal point only
 
--------------------------------------  AGE ---------------------------------------
+--------------------------------------------   AGE ---------------------------------------
 -- AGE function returns the number of years, months, and days between two dates
 -- AGE(Date1,Date2) ... if date1 is not provided the current date will be used
 
@@ -511,7 +542,7 @@ SELECT order_line, ship_date, order_date,
 AGE(ship_date,order_date) AS TimeTaken
 FROM sales ORDER BY TimeTaken DESC;
 
--------------------------------------  EXTRACT ---------------------------------------
+--------------------------------------------   EXTRACT ---------------------------------------
 -- EXTRACT function extracts parts from a date
 -- EXTRACT('unit' FROM 'date')
 -- Types: day, decade, doy, epoch, hour, minute, month, second, year .. others as well
@@ -542,7 +573,7 @@ LEFT JOIN product AS p ON s.product_id = p.product_id
 WHERE p.sub_category = 'Chairs'
 GROUP BY month ORDER BY month ASC;
 
----------------------------------------- PATTERN MATCHING ------------------------------------
+--------------------------------------------  PATTERN MATCHING ------------------------------------
 -- LIKE, SIMILAR TO, ~(Regular Expressions)
 -- use LIKE for simpler queries and RegEx for more complex
 -- AVOID using SIMILAR TO, uses REGEX internally and is slow option
@@ -553,7 +584,7 @@ GROUP BY month ORDER BY month ASC;
 SELECT * FROM sales WHERE ship_mode LIKE 'Se%';
 SELECT * FROM sales WHERE ship_mode NOT LIKE 'Se%';
 
----------------------------------------- ADANCED PATTERN MATCHING (RegEx) ---------------------
+--------------------------------------------  ADANCED PATTERN MATCHING (RegEx) ---------------------
 -- | is either of two alternatives
 -- * repition of the previous item zero or more times
 -- + repition of the previous item one of more times
@@ -602,7 +633,215 @@ INSERT INTO zipcode (zip) VALUES
 SELECT * FROM zipcode;
 SELECT * FROM zipcode WHERE zip ~'^[0-9]{5,6}$';
 
--------------------------------------- DATA TYPE CONVERSION ------------------------------------
+DROP TABLE zipcode;
+--------------------------------------------  DATA TYPE CONVERSION ------------------------------------
+-- TO_CHAR function converts a number or date to string
+-- TO_CHAR(value, format_mask)
+-- format mask
+-- 9 (value with no leading zeros); 0 (value with leading zeros); . (decimal)
+-- , (group separator); PR (negative sign in brackets); S (sign); L (curency symbol);
+-- MI (minus sign for neg numbs); PL (plus sign for pos numb); SG (plus/minus sign both)
+-- EEEE (scientific notation)
 
+-- number to string
+SELECT sales, TO_CHAR(sales,'9999.99') FROM sales;
+SELECT sales, TO_CHAR(sales,'L9999.99') FROM sales; -- L add currency symbol default dollar
+-- L or $ words
+SELECT sales, 'Total sales is '||TO_CHAR(sales,'$9,999.99') AS message FROM sales;
 
+-- Date to string
+SELECT order_date, TO_CHAR(order_date,'MMDDYY') FROM sales;
+SELECT order_date, TO_CHAR(order_date, 'Month DD, YYYY') FROM sales; 
+SELECT order_date, TO_CHAR(order_date, 'Month DAY DD, YYYY') FROM sales; 
 
+--------------------------------------------  Conversion to date -------------------------------------
+-- Convert a string to date
+-- TO_Date(string1, format_mask)
+SELECT TO_DATE('2014/04/25', 'YYYY/MM/DD');
+SELECT TO_DATE('033114', 'MMDDYY');
+
+-- convert a string to number
+-- TO_NUMBER(string, format mask)
+SELECT TO_NUMBER('1210.73','9999.99');
+SELECT TO_NUMBER('$1,210.73','L9,999.99');
+
+--------------------------------------------    CREATE USER     -----------------------------------
+-- CREATE USER statement creates a database account that allows you to log into the database.
+-- Do not want to show all parts of the database to everyone.
+-- CREATE USER user_name [WITH PASSWORD 'password_value' | VALID UNTIL 'expiration']
+
+-- Access control
+CREATE USER starttech WITH PASSWORD 'academy';
+CREATE USER starttech WITH PASSWORD 'academy' VALID UNTIL 'Jan 1, 2020';
+CREATE USER starttech WITH PASSWORD 'adademy' VALID UNTIL 'infinity';
+
+-- may want user to only read data, or access/change but not change
+--------------------------------------------      GRANT/REVOKE     ------------------------------------
+-- privaledges to tables can be controlled using GRANT , REVOKE.
+-- These permissions can be any combination of SELECT, INSERT, UPDATE, DELETE, INDEX
+-- CREATE, ALTER, DROP, GRANT OPTION, or ALL
+-- Grant to give, take away Revoke
+
+-- GRANT priviledges ON object TO user;  - object is view or tablename
+-- REVOKE priviledges ON object FROM user;
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON product TO starttech;
+REVOKE DELETE ON product FROM starttech;
+-- To see click on the table products, right click, security, then see all.
+
+GRANT ALL ON products TO starttech;
+GRANT SELECT ON products TO PUBLIC;
+REVOKE ALL ON products FROM starttech;
+
+--------------------------------------------      DROP USER     ------------------------------------
+
+-- DROP USER statement is used to remove a user from a database.
+DROP USER user_name; 
+-- it the user that you wish to delete owns a database, first drop the database. 
+DROP USER starttech; -- will need to revoke the rights of the user on table product first, then do this
+REVOKE ALL ON product FROM starttech;
+DROP USER starttech; -- now works -- look at Login/Group Roles now over
+
+--------------------------------------------      RENAME USER     ------------------------------------
+-- RENAME USER statement us used to rename a user in the database
+-- ALTER USER user_name RENAME TO new_name;
+ALTER USER startech RENAME TO bob;
+
+--------------------------------------------      FIND USERS AND USER ACTIVITY  ----------------------
+-- Find all users
+-- Run a query against pg_user table to retrieve information about users.
+SELECT usename FROM pg_user;
+SELECT * FROM pg_user;
+-- Find Logged-ing users 
+-- Run a query against pg_stat_activity table to retrieve information about logged-users
+SELECT DISTINCT usename FROM pg_stat_activity;
+SELECT * FROM pg_stat_activity;
+
+--------------------------------------------      TABLESPACES     ------------------------------------
+-- Tablespaces allow database administrators to define locations in the file system
+-- where the files representing database objects can be stored.
+-- used when disk space is getting full, until the primary disk is increased
+-- performance -- data need all the time keep in one tablespace, and archived data in another tablespace
+-- can only be done by superuser
+-- ordinary database users can be grated 
+-- CREATE TABLESPACE 'tablespace name' LOCATION 'location on drive' 
+
+--CREATE TABLESPACE NewSpace LOCATION '/mnt/sd1/postgresql/data';
+CREATE TABLESPACE NewSpace LOCATION 'C:\Program Files\PostgreSQL\13\data\data_ben'; -- success
+CREATE TABLE customer_test (i  int) TABLESPACE NewSpace; -- table created in new tablespace NewSpace
+SELECT * FROM pg_tablespace;
+SET defaut_tablespace = NewSpace; --set as the default tablespace
+CREATE TABLE second_table (test_column int);
+SELECT NewSpace FROM pg_tablespace;
+
+--------------------------------------------      Primary Key     ------------------------------------
+-- primary key consists of one or more columns
+-- uniquely identify each row in table
+-- no value in the PK can be blank or null
+-- foreign key uniquely identifies a row in another table
+
+--------------------------------------------     ACID Compliance     ---------------------------------
+-- ACID (Atomicity, Consistency, Isolation, Durability) is a concept database professionals generally
+-- look for when evvaluating databases and application architectures. For a relable database all these four 
+-- attibutes should be acheived.
+-- Atomicity - is an all or none proposition
+-- Consistency - ensures that a transaction can only bring the database from one valid state to another
+-- Isolation - keeps transactions separated from each other until they're finished.
+-- Durabilitiy - guarantees that the database will keep track of pending changes in such 
+-- a way that the server can recover from an abnormal termination
+-- PostGRESQL is ACID compliant. 
+
+--------------------------------------------     TRUNCATE     ---------------------------------
+-- the Trucation table statement will remove all records from a table  or set of tables in PostgreSQL.
+-- If no table given the whole table.
+-- it performs the same function as DELETE statement without a WHERE clause
+-- TRUNCATE [ONLY] table_name [CASCADE | RESTRICT];
+-- use only when want all descendent tables to be deleted too. 
+-- restrict - if any foreign key reference table to this table, will not delete. 
+-- will only delete the rows of table NOT the table. Need to use DROP TABLE to do this.
+-- truncate is faster than delete
+
+SELECT * FROM customer_20_60;
+TRUNCATE TABLE customer_20_60;
+-- same as 
+DELETE FROM customer_20_60;  
+
+--------------------------------------------     PERFORMANCE TUNING     ---------------------------------
+-- useful for large datasets for performance
+-- Displacs the execution plan for a query statement without running the query
+-- EXPLAIN [VERBOSE] query;
+-- VERBOSE - displays the full query plan instead of just a summary.
+
+EXPLAIN SELECT * FROM customer; -- cost is an arbitrary value, so should compare relative to other queries
+EXPLAIN VERBOSE SELECT * FROM customer;
+EXPLAIN SELECT DISTINCT * FROM customer;
+-- rows and width given
+-- behind the scene distinct is grouping the data for all the columns, and giving distinct. Now cost higher
+
+--------------------------------------------     Soft vs Hard Delete     ---------------------------------
+-- Soft delete vs hard delete
+-- soft deleting means you are marking not actually deleting the record. stays in memory.
+-- soft takes more memory
+-- hard delete is physically deleted.
+-- ex - update first soft deletes and then updates
+
+--------------------------------------------      UPDATE vs CASE     ---------------------------------
+-- Update - increases the storage size of the table, makes a soft copy
+-- try to use Case instead - saves a lot of space
+-- later when using joins it will be better
+
+-- UPDATE customer SET customer_name = TRIM(UPPER(customer_name)) FROM customer WHERE (TRIM(UPPER(customer_name))) <> customer_name;
+-- every updates row is actually a soft delete and an insert. 
+-- So updating every row will increase the storage size of the table
+-- instead you can use the case statements while crewating such tables
+											 
+--------------------------------------------     VACUUM    ---------------------------------
+VACUUM [table]
+-- reclains disk space occupied by rows that were marked for deletion by UPDATE and DELETE operationg
+-- compacts the table to free up the consumed space
+-- use it on tables which you are updating and deleting on a regular basis.
+
+--------------------------------------------     TRUNCATE VS DELETE     ---------------------------------
+-- The TRUNCATE statement is typically far more efficient than DELETE
+-- requires fewer resources and less logging overhead
+-- instead of creating a table each time, try to use truncate as it will keep
+-- the table structure and properties intact
+-- CON: Truncate frees up space and is impossible to rollback. If error in a large statement, the truncate 
+-- will cause problems. Because it is a hard delete.
+
+--------------------------------------------     TIP STRING      ---------------------------------
+-- pattern matching:
+-- whenever possible use LIKE instead of REGEX
+-- do not use SIMILAR TO
+-- avoid unnecessarry string operations like replace, upper, lower
+-- string operations:
+-- use trim instead of replace whereever possible when removing spaces
+-- avoid unnecessary string columns. (for example, use date formats instead of strings for dates)
+
+--------------------------------------------     TIP Joins     ---------------------------------
+-- resource expensive, if incorrect can increase 10-100x
+-- use subqueries to select only the required fields from the table
+-- avoid one to many joins by mentioning group by clause in the matching keys of table b
+
+--------------------------------------------     TIP Schemas     ---------------------------------
+-- A schema is a colecton of database objects associated with one particular database. 
+-- You may have one or multiple schemas in a database. 
+-- 1. To allow many users to use on database without interfering with each other.
+-- 2. To organize objects into logical groups to make them more manageable
+-- 3. Third-part paplications can be put into separate schemas so they 
+-- do not collide with the names of other objects.
+-- Can have two different tables names customer, with the use of schema can avoid that
+-- until now, all schema has been public 
+-- public.tablename
+-- to access any other table/object from a different schema need schema. 
+----- A schema is a collection of database objects associated with one particular database. 
+----- You may have >1 schemas in a database
+-- CREATE SCEMA testschema;
+-- CREATE testschema.tablename
+
+CREATE SCHEMA test;
+CREATE TABLE test.customer AS SELECT * FROM customer; -- could just use public.customer
+SELECT * FROM test.customer;
+											 
+										 
+--------------------------------------------  END    -------------------------------------------- 
